@@ -13,6 +13,8 @@ build :: () {
 }
 
 DECLARATIONS_TO_OMIT :: string.[
+    "aiGetMaterialFloat", // not exported in assimp
+    "aiGetMaterialInteger" // not exported in assimp
 ];
 
 ENUMS_TO_OMIT :: string.[
@@ -28,27 +30,41 @@ generate_bindings :: () -> bool {
 
         #if OS == .WINDOWS {
             output_filename = "bindings/windows/windows.jai";
-            array_add(*libpaths, "bindings/windows/x64");
+            array_add(*library_search_paths, "bindings/windows/x64");
 
             footer = FOOTER_WIN;
             generate_library_declarations = false;
 
-        } /*else #if OS == .LINUX {
+            lib: Library;
+            lib.filename = "assimp";
+            array_add(*libraries, lib);
+        } else #if OS == .MACOS {
+            strip_flags = 0;
+            output_filename = "bindings/macos/macos.jai";
+            array_add(*library_search_paths, "bindings/macos/arm64");
+            
+            footer = FOOTER_MACOS;
+            generate_library_declarations = false;
+
+            lib: Library;
+            lib.filename = "libassimp";
+            array_add(*libraries, lib);
+
+            array_add(
+                *path_fragments_to_treat_as_non_system_paths,
+                "include/assimp"
+            );
+        }/*else #if OS == .LINUX {
             strip_flags = 0;
             output_filename = "linux/linux.jai";
-            array_add(*libpaths, "linux/bin");
+            array_add(*library_search_paths, "linux/bin");
 
             footer = FOOTER_LINUX;
             generate_library_declarations = false;
-
-        } else #if OS == .MACOS {
-            strip_flags = 0;
-            output_filename = "macos/macos.jai";
         }*/ else {
             assert(false, "this OS is currently unsupported. You might be able to add support for it though!");
         }
 
-        array_add(*libnames, "assimp");
         array_add(*include_paths, "include");
         array_add(*source_files, "include/assimp/aabb.h");
         array_add(*source_files, "include/assimp/anim.h");
@@ -60,6 +76,26 @@ generate_bindings :: () -> bool {
         array_add(*source_files, "include/assimp/texture.h");
         array_add(*source_files, "include/assimp/cimport.h");
         array_add(*source_files, "include/assimp/cexport.h");
+        array_add(*source_files, "include/assimp/scene.h");
+        array_add(*source_files, "include/assimp/postprocess.h");
+        array_add(*source_files, "include/assimp/defs.h");
+        array_add(*source_files, "include/assimp/types.h");
+        array_add(*source_files, "include/assimp/vector2.h");
+        array_add(*source_files, "include/assimp/vector3.h");
+        array_add(*source_files, "include/assimp/color4.h");
+        array_add(*source_files, "include/assimp/matrix3x3.h");
+        array_add(*source_files, "include/assimp/matrix4x4.h");
+        array_add(*source_files, "include/assimp/quaternion.h");
+        array_add(*source_files, "include/assimp/texture.h");
+        array_add(*source_files, "include/assimp/mesh.h");
+        array_add(*source_files, "include/assimp/aabb.h");
+        array_add(*source_files, "include/assimp/light.h");
+        array_add(*source_files, "include/assimp/camera.h");
+        array_add(*source_files, "include/assimp/material.h");
+        array_add(*source_files, "include/assimp/anim.h");
+        array_add(*source_files, "include/assimp/metadata.h");
+        array_add(*source_files, "include/assimp/importerdesc.h");
+        array_add(*source_files, "include/assimp/cimport.h");
         array_add(*source_files, "include/assimp/scene.h");
         array_add(*source_files, "include/assimp/postprocess.h");
 
@@ -99,6 +135,12 @@ custom_visitor :: (decl: *Declaration, parent_decl: *Declaration) -> Declaration
 FOOTER_WIN :: #string END
 zlib :: #library,no_dll,link_always "x64/zlibstatic";
 assimp :: #library,no_dll "x64/assimp";
+END
+
+FOOTER_MACOS :: #string END
+libassimp :: #library,no_dll "arm64/libassimp";
+libcxx :: #library,system,link_always "libc++";
+libz :: #library,system,link_always "libz";
 END
 
 FOOTER_LINUX :: #string END
