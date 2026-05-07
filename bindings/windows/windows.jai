@@ -3868,3 +3868,4 @@ aiPostProcessSteps :: enum s32 {
 
 zlib :: #library,no_dll,link_always "x64/zlibstatic";
 assimp :: #library,no_dll "x64/assimp";
+libcpmt :: #library,system,link_always "libcpmt";

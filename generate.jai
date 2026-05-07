@@ -162,7 +162,7 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
     array_add(*config_command, "-DASSIMP_BUILD_ZLIB=ON");
     array_add(*config_command, "-DASSIMP_BUILD_TESTS=OFF");
     array_add(*config_command, "-DASSIMP_INSTALL=OFF");
-    array_add(*config_command, "-DUSE_STATIC_CRT=OFF");
+    array_add(*config_command, "-DUSE_STATIC_CRT=ON");
     array_add(*config_command, "-DASSIMP_BUILD_ASSIMP_VIEW=OFF");
     array_add(*config_command, tprint("-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=%", stage_dir));
     array_add(*config_command, tprint("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%", stage_dir));
@@ -207,9 +207,9 @@ detect_windows_cmake_generator :: () -> generator: string, is_multi_config: bool
     }
 
     available := tprint("%%", output, error);
-    if contains(available, "Visual Studio 18 2026") return "Visual Studio 18 2026", true;
-    if contains(available, "Visual Studio 17 2022") return "Visual Studio 17 2022", true;
     if contains(available, "Visual Studio 16 2019") return "Visual Studio 16 2019", true;
+    if contains(available, "Visual Studio 17 2022") return "Visual Studio 17 2022", true;
+    if contains(available, "Visual Studio 18 2026") return "Visual Studio 18 2026", true;
     if contains(available, "Ninja Multi-Config")     return "Ninja Multi-Config", true;
     if contains(available, "Ninja")                  return "Ninja", false;
     if contains(available, "NMake Makefiles")        return "NMake Makefiles", false;
@@ -293,6 +293,7 @@ recreate_directory :: (name: string) -> bool {
 FOOTER_WIN :: #string END
 zlib :: #library,no_dll,link_always "x64/zlibstatic";
 assimp :: #library,no_dll "x64/assimp";
+libcpmt :: #library,system,link_always "libcpmt";
 END
 
 FOOTER_MACOS :: #string END
