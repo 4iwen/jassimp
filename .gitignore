@@ -5,3 +5,4 @@ test.pdb
 bindings/windows/build/
 bindings/windows/stage/
 *.lib
+*.lib
