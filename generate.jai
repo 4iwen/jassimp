@@ -163,7 +163,21 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
     array_add(*config_command, "-DASSIMP_BUILD_TESTS=OFF");
     array_add(*config_command, "-DASSIMP_INSTALL=OFF");
     array_add(*config_command, "-DUSE_STATIC_CRT=ON");
-    array_add(*config_command, "-DASSIMP_BUILD_ASSIMP_VIEW=OFF");
+
+    array_add(*config_command, "-DASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT=OFF");
+    array_add(*config_command, "-DASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT=OFF");
+
+    array_add(*config_command, "-DASSIMP_BUILD_OBJ_IMPORTER=ON");
+    array_add(*config_command, "-DASSIMP_BUILD_FBX_IMPORTER=ON");
+    array_add(*config_command, "-DASSIMP_BUILD_GLTF_IMPORTER=ON");
+
+    array_add(*config_command, "-DASSIMP_BUILD_COLLADA_IMPORTER=ON");
+    array_add(*config_command, "-DASSIMP_BUILD_STL_IMPORTER=ON");
+    array_add(*config_command, "-DASSIMP_BUILD_PLY_IMPORTER=ON");
+
+    array_add(*config_command, "-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG");
+    array_add(*config_command, "-DCMAKE_CXX_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG /EHsc");
+
     array_add(*config_command, tprint("-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=%", stage_dir));
     array_add(*config_command, tprint("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%", stage_dir));
     array_add(*config_command, tprint("-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=%", stage_dir));
