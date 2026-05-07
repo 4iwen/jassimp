@@ -124,6 +124,14 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
 
     build_type := ifx compile_debug then "Debug" else "Release";
     build_type_upper := ifx compile_debug then "DEBUG" else "RELEASE";
+    generator, generator_is_multi_config := detect_windows_cmake_generator();
+    if !generator {
+        compiler_report(
+            "Could not find a supported Windows CMake generator. Install Visual Studio, Build Tools, or Ninja.\n"
+        );
+        return false;
+    }
+
     build_dir := "bindings/windows/build";
     stage_dir := "bindings/windows/stage";
     output_dir := "bindings/windows/x64";
@@ -136,8 +144,10 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
     array_add(*config_command, "cmake");
     array_add(*config_command, "-S", source_dir);
     array_add(*config_command, "-B", build_dir);
-    array_add(*config_command, "-G", "Visual Studio 17 2022");
-    array_add(*config_command, "-A", "x64");
+    array_add(*config_command, "-G", generator);
+    if generator_is_multi_config {
+        array_add(*config_command, "-A", "x64");
+    }
     array_add(*config_command, "-DASSIMP_WARNINGS_AS_ERRORS=ON");
     array_add(*config_command, "-DASSIMP_BUILD_ASSIMP_TOOLS=OFF");
     array_add(*config_command, "-DBUILD_SHARED_LIBS=OFF");
@@ -146,20 +156,26 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
     array_add(*config_command, "-DASSIMP_INSTALL=OFF");
     array_add(*config_command, "-DUSE_STATIC_CRT=OFF");
     array_add(*config_command, "-DASSIMP_BUILD_ASSIMP_VIEW=OFF");
-    array_add(*config_command, tprint("-DCMAKE_BUILD_TYPE=%", build_type));
     array_add(*config_command, tprint("-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=%", stage_dir));
     array_add(*config_command, tprint("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%", stage_dir));
     array_add(*config_command, tprint("-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=%", stage_dir));
-    array_add(*config_command, tprint("-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
-    array_add(*config_command, tprint("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
-    array_add(*config_command, tprint("-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
+    if generator_is_multi_config {
+        array_add(*config_command, tprint("-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
+        array_add(*config_command, tprint("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
+        array_add(*config_command, tprint("-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_%=%", build_type_upper, stage_dir));
+    } else {
+        array_add(*config_command, tprint("-DCMAKE_BUILD_TYPE=%", build_type));
+    }
 
     if run_command(..config_command).exit_code != 0 {
         return false;
     }
 
     build_command: [..] string;
-    array_add(*build_command, "cmake", "--build", build_dir, "--config", build_type, "--parallel", "10");
+    array_add(*build_command, "cmake", "--build", build_dir, "--parallel", "10");
+    if generator_is_multi_config {
+        array_add(*build_command, "--config", build_type);
+    }
     if run_command(..build_command).exit_code != 0 {
         return false;
     }
@@ -174,6 +190,22 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
     success := copy_file(assimp_lib, tprint("%/assimp.lib", output_dir));
     success &&= copy_file(zlib_lib, tprint("%/zlibstatic.lib", output_dir));
     return success;
+}
+
+detect_windows_cmake_generator :: () -> generator: string, is_multi_config: bool {
+    result, output, error := run_command("cmake", "--help", capture_and_return_output = true);
+    if result.exit_code != 0 {
+        return "", false;
+    }
+
+    available := tprint("%%", output, error);
+    if contains(available, "Visual Studio 18 2026") return "Visual Studio 18 2026", true;
+    if contains(available, "Visual Studio 17 2022") return "Visual Studio 17 2022", true;
+    if contains(available, "Visual Studio 16 2019") return "Visual Studio 16 2019", true;
+    if contains(available, "Ninja Multi-Config")     return "Ninja Multi-Config", true;
+    if contains(available, "Ninja")                  return "Ninja", false;
+    if contains(available, "NMake Makefiles")        return "NMake Makefiles", false;
+    return "", false;
 }
 
 find_windows_build_artifact :: (root: string, name_prefix: string, name_suffix: string, exact_name := false) -> string {
