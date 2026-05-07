@@ -4,3 +4,4 @@ test.pdb
 .DS_Store
 bindings/windows/build/
 bindings/windows/stage/
+*.lib
