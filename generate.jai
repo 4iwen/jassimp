@@ -132,9 +132,17 @@ compile_assimp_windows :: (compile_debug: bool) -> bool {
         return false;
     }
 
-    build_dir := "bindings/windows/build";
-    stage_dir := "bindings/windows/stage";
-    output_dir := "bindings/windows/x64";
+    path_ok: bool;
+    build_dir: string;
+    stage_dir: string;
+    output_dir: string;
+
+    build_dir, path_ok = get_absolute_path("bindings/windows/build");
+    if !path_ok return false;
+    stage_dir, path_ok = get_absolute_path("bindings/windows/stage");
+    if !path_ok return false;
+    output_dir, path_ok = get_absolute_path("bindings/windows/x64");
+    if !path_ok return false;
 
     if !recreate_directory(build_dir) return false;
     if !recreate_directory(stage_dir) return false;
